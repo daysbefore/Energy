@@ -1,0 +1,104 @@
+---
+title: "Coursework_2"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+# Introduction: This report looks at a dataset which consist of weather data and energy/electricity use across various homes in london. The data is intended to be originally used for dissertation purposes however is also being used for this task. Throughout this report, how energy usage is affected by weather and bank holidays will be what is looked at. Another topic of ineterest is how bank holidays affect the use of energy.
+
+# Data: This dataset originally is from from the London data store: (https://data.london.gov.uk/dataset/smartmeter-energy-use-data-in-london-households). It contains the energy consumption readings for a sample of 5,567 London Households that took part in the UK Power Networks led Low Carbon London project between November 2011 and February 2014. The data from the smart meters seems associated only to the electrical consumption. The weather information was collected using darksky api (https://darksky.net/dev). The data is originally collected by UK Power Networks. The data is collected from smart meters from various homes in London. Subsequently the data is also only collected from London weather for that time period. Since the data is inconsistent, meaning some homes have more data points than others due to having smart meter installed earlier on in the year, the average energy is used. This is calculated by energy_sum/LCLid(frequency) = avg_energy. With LCLid representing the house ID identification.
+
+# Scalling: Certain data points will be scalled up on the graph to make the trends and effects more visible. 
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(caret)
+library(rpart)
+library(readr)
+```
+
+
+
+```{r}
+weather_energy <- read_csv("Downloads/weather_energy.csv")
+head(weather_energy)
+```
+
+# Question 1: Does the Maximum tempreture in the day affect the energy consumption
+
+# Analysis: It appears that when there is a drop in temperature it leads to an increase in the amount of electricity used by a household. This is likely due to people more likely staying at home for longer hours or using electricty as a form of heating their households. There is also a periodic trend in the dataset in regards to temperature, as the is seasonality. Decreases in temperature has a bigger effect on the energy consumption than increases in temperature. It can be said that the link between these to variables is somewhat inveresly proportional.
+
+```{r}
+ggplot()+   
+  geom_line(data=weather_energy, aes(x=day,y=avg_energy,col="Consumption"))+
+  scale_y_continuous(sec.axis = sec_axis(~.*180-40, name = "Temperature [C]"))+
+  geom_line(data=weather_energy, aes(x=day, y=(temperatureMax), col="Temperature"))+
+  scale_color_manual("",values=c("skyblue4","green4"),
+                     labels=c("Energy Consumption","Temperature"))+
+  labs(title = "Graph showing Energy consumption and Max Temperature",
+       x = "Year day",
+       y = "Electricity consumption Kwh")+
+  theme_linedraw()
+
+```
+
+# Question 2: Between the different precipitation types, rain or snow, which one tends to lead to a higher energy consumption
+
+# Analysis: Snowy weather has a significantly higher electricity consumption level. This is expected as snow typically forms in extremely cold weather. Rain occurs in other seasons throghout the year so on average, rain occurs in warmer conditions. As we know from our data warmer days tend to lead to less energy used. During snowy days the likelihood of individuals staying in their homes is increased, therefore more energy is likely to be used.
+```{r}
+
+ggplot()+   
+  geom_boxplot(data=weather_energy, aes(x=precipType, y = avg_energy, fill=precipType), alpha=0.4)+
+  labs(title = "",
+       x = "weather type",
+       y = "Electricity consumption Kwh")+
+  theme_linedraw()
+```
+
+# Question 3: Does the dewPoint have an effect on energy consumption
+# Analysis: Dew Point is defined as the temperature the air needs to be cooled to (at constant pressure) in order to achieve a relative humidity (RH) of 100%. It is clear when duew point is highest, energy consumption is also low. This is due to increase humidy being associated with heat. From the data we know that warmer days have lower energy consumption so this is expected. 
+
+```{r}
+ggplot()+   
+  geom_line(data=weather_energy, aes(x=day,y=avg_energy,col="Consumption"))+
+  scale_y_continuous(sec.axis = sec_axis(~.*180-40, name = "Dew Point"))+
+  geom_line(data=weather_energy, aes(x=day, y=(dewPoint), col="dewpoint"))+
+  scale_color_manual("",values=c("orange","pink"),
+                     labels=c("Consumption","Dew"))+
+  labs(title = "Graph showing Energy consumption and Dew Point",
+       x = "Year day",
+       y = "Electricity consumption Kwh")+
+  theme_linedraw()
+```
+
+# Question 4: Which weather type has the most effect on energy consumtion
+# Analysis: Clear days have the biggest variation in energy consumption, this is because clear days are the most likely to have any kind of temperature, therefore it has a very big IQR. Unlike snow or fog, it does not require specifically a low temperature to occur. Outliers occur on a cloudy night as this is something that can occasionally happen in warm days with low energy consumption. Cloudy days and nights are typically associated with low tempretures hence often having lower median energy consumption. Clear days often happen when its sunny and there is good weather, hence it has such the lowest median for electricity consumption. 
+
+```{r}
+ggplot()+   
+  geom_boxplot(data=weather_energy, aes(x=icon, y = avg_energy, fill=icon), alpha=0.4)+
+  labs(title = "",
+       x = "weather type",
+       y = "Electricity consumption Kwh")+
+  theme_linedraw()
+```
+
+# Question 5: What is the trend in enery consumption over the two years of this data.
+
+# Analysis: Electricity consumption tends to decrease and increase again through out the year, almost as if there is a pattern. This can be attributed to the weather seasons that occur. Winter months see a very high increase in electricity consumption as people are more likely to stay indoors on the other hand, in the summer months people tend to spend less time indoors and use electricity for heating. When comparing the same points in the year, pariticularly at the start of the year it shows electricity consumption gradually going down. The dataset does not span over enough years to completely confirm this but the decline in energy consumption is observable. 
+```{r}
+ggplot()+   
+  geom_line(data=weather_energy, aes(x=day,y=avg_energy,col="Consumption"))+
+  
+  scale_color_manual("",values=c("purple"),
+                     labels=c("Temperature","Energy Consumption"))+
+  labs(title = "Graph showing Energy consumption and Max Temperature",
+       x = "Year day",
+       y = "Electricity consumption Kwh")+
+  theme_linedraw()
+```
+
+# Conclusion: From this dataset, certain trends can be observed as they are evident. It is difficult to make definitive statements on how the weather recorded affect energy use as it spans only over two years. More data is needed. However in conclusion it appears that weather than makes people spend more time indoors leads to an increase in electricity use. Electricity use is massively affected by seasonality. 
